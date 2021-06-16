@@ -1,0 +1,19 @@
+{
+  "people": ["dd", "kerry", "gerry", "steven", "zac"],
+  "starting_mu": 25,
+  "starting_sigma": 8.33,
+  "matches": [
+    [
+      {"team":  ["zac"], "score":  10},
+      {"team":  ["kerry"], "score":  7},
+      {"team":  ["gerry"], "score":  4},
+      {"team":  ["steven"], "score":  6}
+    ],
+    [
+      {"team":  ["zac"], "score":  10},
+      {"team":  ["kerry", "gerry"], "score":  9},
+      {"team":  ["dd"], "score":  7},
+      {"team":  ["steven"], "score":  7}
+    ]
+  ]
+}
