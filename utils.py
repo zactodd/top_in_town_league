@@ -16,7 +16,13 @@ def update_rankings_from_match(previous_ranking_info, match_info):
         previous_ranking.append([previous_ranking_info[p] for p in t["team"]])
         weights.append(t["weights"])
         teams.append(t["team"])
-    rankings = range(len(sorted_teams))
+
+    # Score base rankings
+    rankings = [max(0, 10 - t["score"]) for t in sorted_teams]
+
+    # Win/loss only rankings
+    # rankings = [t["score"] < 10 for t in sorted_teams]
+    
     current_rankings = rate(previous_ranking, weights=weights, ranks=rankings)
     return {p: r for team_rankings in zip(current_rankings, teams) for r, p in zip(*team_rankings)}
 
