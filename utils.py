@@ -1,4 +1,5 @@
-from trueskill import Rating, rate
+from trueskill import Rating, rate, TrueSkill
+TrueSkill(mu=25, sigma=8.333, draw_probability=0).make_as_global()
 
 HISTORY_PATH = "games.json"
 
@@ -22,7 +23,7 @@ def update_rankings_from_match(previous_ranking_info, match_info):
 
     # Win/loss only rankings
     # rankings = [t["score"] < 10 for t in sorted_teams]
-    
+
     current_rankings = rate(previous_ranking, weights=weights, ranks=rankings)
     return {p: r for team_rankings in zip(current_rankings, teams) for r, p in zip(*team_rankings)}
 
