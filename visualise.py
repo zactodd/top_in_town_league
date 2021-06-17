@@ -33,15 +33,46 @@ def pprint_rankings_history(previous_ranking_info, matches_info):
                     other_metrics[p]["wins"] += 1
 
         rankings.update(update_rankings_from_match(rankings, m))
-        print(format_row.format("team", *(teams[p] if p in teams else "-" for p in order_players)))
-        print(score_row.format("score", *(scores[p] if p in scores else "-" for p in order_players)))
+        game_prints = pteam, pscore = [], []
+        post_prints = pmu, pwins, pwinrate, ptotal, pavg = [], [], [], [], []
+        without_init = pteam, pscore, pwins, pwinrate, ptotal, pavg
+        for p in order_players:
+            pmu.append(f'{rankings[p].mu:.2f}')
+            if p in scores:
+                pteam.append(teams[p])
+                pscore.append(scores[p])
+            else:
+                for i in game_prints:
+                    i.append("-")
+            if p in other_metrics:
+                pwins.append(other_metrics[p]["wins"])
+                pwinrate.append(f'{other_metrics[p]["wins"] / other_metrics[p]["played"]:.2f}')
+                ptotal.append(sum(other_metrics[p]["scores"]))
+                pavg.append(f'{sum(other_metrics[p]["scores"]) / other_metrics[p]["played"]:.2f}')
+            else:
+                for i in without_init:
+                    i.append("-")
+        print("\n".join(score_row.format(n, *s) for n, s in zip(("team", "score"), game_prints)))
         print(line)
-        print(score_row.format("mu", *(f'{rankings[p].mu:.2f}' for p in order_players)))
-        print(score_row.format("wins", *(other_metrics[p]["wins"] if p in other_metrics else "-" for p in order_players)))
-        print(score_row.format("win rate",
-                               *(f'{other_metrics[p]["wins"] / other_metrics[p]["played"]:.2f}'
-                                 if p in other_metrics else "-" for p in order_players)))
-        print(score_row.format("total score", *(sum(other_metrics[p]["scores"]) if p in other_metrics else "-" for p in order_players)))
-        print(score_row.format("avg score", *(f'{sum(other_metrics[p]["scores"]) / other_metrics[p]["played"]:.2f}' if p in other_metrics else "-" for p in order_players)))
+        print("\n".join(score_row.format(n, *s)
+                        for n, s in zip(("mu", "wins", "win rate", "total score", "avg score"), post_prints)))
         print(double_line)
+
+    prints = pmu, pwins, pwinrate, ptotal, pavg = [], [], [], [], []
+    for p in order_players:
+        pmu.append(f'{rankings[p].mu:.2f}')
+        pwins.append(other_metrics[p]["wins"])
+        pwinrate.append(f'{other_metrics[p]["wins"] / other_metrics[p]["played"]:.2f}')
+        ptotal.append(sum(other_metrics[p]["scores"]))
+        pavg.append(f'{sum(other_metrics[p]["scores"]) / other_metrics[p]["played"]:.2f}')
+    print("\n")
+    print(line)
+    print(format_row.format("players", *sorted(previous_ranking_info.keys())))
+    print(line)
+    print("\n".join(score_row.format(n, *s)
+                    for n, s in zip(("mu", "wins", "win rate", "total score", "avg score"), prints)))
+    print(line)
+
+
+
 
