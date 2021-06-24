@@ -1,4 +1,6 @@
 from trueskill import Rating, rate, TrueSkill
+import csv
+from collections import defaultdict
 TrueSkill(mu=25, sigma=8.333, draw_probability=0).make_as_global()
 
 HISTORY_PATH = "games.json"
@@ -33,3 +35,23 @@ def update_rankings_from_matches(previous_ranking_info, matches_info):
     for m in matches_info:
         rankings.update(update_rankings_from_match(rankings, m))
     return rankings
+
+
+def csv_to_game_record(file):
+    with open(file) as f:
+        reader = list(csv.DictReader(f))
+    num_matches = int(len(reader[0]) / 2)
+    match_info = []
+    for g in range(1, num_matches + 1):
+        match_dict = defaultdict(lambda: {"team": []})
+        for r in reader:
+            team = r[f"G{g}Team"]
+            if team != "":
+                match_dict[team]["team"].append(r["Players"])
+                match_dict[team]["score"] = int(r[f"G{g}Score"])
+        for k, v in match_dict.items():
+            team_size = len(match_dict[k]["team"])
+            match_dict[k]["weights"] = [1 / team_size] * team_size
+        match_info.append(list(match_dict.values()))
+    initial_rankings = {r["Players"]: Rating() for r in reader}
+    return initial_rankings, match_info
