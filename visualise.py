@@ -14,14 +14,13 @@ def pprint_rankings_history(previous_ranking_info, matches_info):
     score_row = " {:<15}|" + " {:>15}|" * num_players
     line = "-" * len(format_row.format(*tuple([""] * (num_players + 1))))
 
-    double_line = f"{line}\n{line}"
-
     print(format_row.format("players", *sorted(previous_ranking_info.keys())))
     print(line)
     print(score_row.format("mu", *(f'{previous_ranking_info[p].mu:.2f}' for p in order_players)))
-    print(double_line)
+    print(line)
 
     for game_idx, m in enumerate(matches_info, 1):
+        print(line)
         teams = {}
         scores = {}
         for i, t in enumerate(m, 1):
@@ -58,14 +57,14 @@ def pprint_rankings_history(previous_ranking_info, matches_info):
         print(line)
         print("\n".join(score_row.format(n, *s)
                         for n, s in zip(("mu", "wins", "win rate", "total score", "avg score"), post_prints)))
-        print(double_line)
+        print(line)
 
     prints = pmu, pplayed, pwins, pwinrate, ptotal, pavg = [], [], [], [], [], []
     for p in order_players:
         pmu.append(f'{rankings[p].mu:.2f}')
         pplayed.append(other_metrics[p]["played"])
         pwins.append(other_metrics[p]["wins"])
-        pwinrate.append(f'{other_metrics[p]["wins"] / other_metrics[p]["played"]:.2f}')
+        pwinrate.append(f'{100 * other_metrics[p]["wins"] / other_metrics[p]["played"]:.2f}')
         ptotal.append(sum(other_metrics[p]["scores"]))
         pavg.append(f'{sum(other_metrics[p]["scores"]) / other_metrics[p]["played"]:.2f}')
     print("\n")
