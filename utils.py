@@ -3,8 +3,6 @@ import csv
 from collections import defaultdict
 TrueSkill(mu=25, sigma=8.333, draw_probability=0).make_as_global()
 
-HISTORY_PATH = "games.json"
-
 
 def load_init_rankings(starting_info):
     return {k: Rating(*v) for k, v in starting_info.items()}

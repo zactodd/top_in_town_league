@@ -3,9 +3,6 @@ import visualise
 import json
 import pprint
 
-with open(utils.HISTORY_PATH) as f:
-    games_info = json.load(f)
-
 
 FILE = "/home/tutor/Downloads/Unofficial Official Top In Town League - Sheet1.csv"
 rank_info, matches_info = utils.csv_to_game_record(FILE)
