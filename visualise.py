@@ -170,18 +170,21 @@ def plot_player_score(player, matches_info):
                     rankings.append(colours[sum(score >= int(t["score"]) for t in m)])
                 break
     plt.bar(matches, scores, color=rankings)
-    plt.plot([-0.5, len(scores) -0.5], [4.5, 4.5], ls="--", c="r", lw=3)
     plt.plot(matches, avg_scores, lw="3", c="blue")
+    plt.plot([-0.5, len(scores) -0.5], [4.5, 4.5], ls="--", c="r", lw=3)
+
     plt.xticks(rotation=45)
 
-    labels = ["1st", "Under Half", "2nd", "score avg", "3rd", "4th"]
-    legend_colours = ["gold", "red", "silver",  "blue", "saddlebrown", "thistle"]
+    labels = ["1st", "Below 5VPs", "2nd", "Avg Score", "3rd", "4th"]
+    legend_colours = ["gold", "red", "silver", "blue", "saddlebrown", "thistle"]
     handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in legend_colours]
     plt.legend(handles, labels, loc='lower center', ncol=4)
     plt.title(f"{player}'s Scores")
     plt.ylabel("Score")
     plt.ylim(2, 12)
-    plt.show()
+    plt.savefig(f"figs/{player}_score.png")
+    plt.close()
+    plt.clf()
 
 
 def plot_player_mu(player, previous_ranking_info, matches_info):
@@ -208,9 +211,11 @@ def plot_player_mu(player, previous_ranking_info, matches_info):
         tick.set_rotation(45)
     sax.set_ylabel("Mu")
 
-    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in ["green", "red", "white", "blue"]]
-    plt.legend(handles, ["/\\ mu", "\\/ mu", "", "mu"], loc='lower center', ncol=3)
+    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in ["green", "red", "blue"]]
+    plt.legend(handles, ["/\\ mu", "\\/ mu", "mu"], loc='lower center', ncol=2)
     ax.set_title(f"{player}'s Mu")
-    ax.set_ylim(-15, 15)
+    ax.set_ylim(-10, 10)
     ax.set_ylabel("Delta Mu")
-    plt.show()
+    plt.savefig(f"figs/{player}_mu.png")
+    plt.close()
+    plt.clf()
