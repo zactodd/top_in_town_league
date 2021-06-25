@@ -85,8 +85,9 @@ def plot_mu_over_games(previous_ranking_info, matches_info):
         for p, r in rankings.items():
             mu_per_game[p].append(r.mu)
 
-    for x in mu_per_game.values():
-        plt.plot(range(1, len(x) + 1), x)
+    for y in mu_per_game.values():
+        plt.plot(range(1, len(y) + 1), y)
+    plt.plot([1, len(y)], [25, 25], ls="--", c="r", lw=3)
     plt.show()
 
 
@@ -99,9 +100,9 @@ def plot_delta_mu_over_games(previous_ranking_info, matches_info):
         for p, r in rankings.items():
             mu_per_game[p].append(r.mu)
 
-    delta_mus = {p: [j - i for i, j in zip(mu[:-1], mu[1:])] for p, mu in mu_per_game.items()}
-    for x in delta_mus.values():
-        plt.scatter(range(1, len(x) + 1), x)
+    delta_mus = {p: [j - i if i != j else None for i, j in zip(mu[:-1], mu[1:])] for p, mu in mu_per_game.items()}
+    for y in delta_mus.values():
+        plt.scatter(range(1, len(y) + 1), y)
     plt.show()
 
 
@@ -119,10 +120,97 @@ def plot_avg_score_over_games(previous_ranking_info, matches_info):
             if p not in played:
                 scores[p].append(None)
     for s in scores.values():
-        x = [avg for avg, *_ in
+        y = [avg if p > 0 else None for avg, _, p in
              accumulate(s,
                         lambda t, a: t if a is None else ((t[1] + a) / (t[2] + 1), t[1] + a, t[2] + 1),
                         initial=(0, 0, 0))
              ]
-        plt.scatter(range(1, len(x) + 1), x)
+        plt.scatter(range(1, len(y) + 1), y)
+    plt.plot([1, len(y)], [4, 4], ls="--", c="r", lw=3)
+    plt.show()
+
+
+def plot_winrate_over_games(previous_ranking_info, matches_info):
+    order_players = sorted(previous_ranking_info.keys())
+    wins = defaultdict(list)
+
+    for m in matches_info:
+        played = set()
+        for t in m:
+            for p in t["team"]:
+                wins[p].append(t["score"] >= 10)
+                played.add(p)
+        for p in order_players:
+            if p not in played:
+                wins[p].append(None)
+    for s in wins.values():
+        y = [w if p > 0 else None for w, _, p in
+             accumulate(s,
+                        lambda t, a: t if a is None else ((t[1] + a) / (t[2] + 1), t[1] + a, t[2] + 1),
+                        initial=(0, 0, 0))
+             ]
+        plt.scatter(range(1, len(y) + 1), y)
+    plt.plot([1, len(y)], [0.25, 0.25], ls="--", c="r", lw=3)
+    plt.show()
+
+
+def plot_player_score(player, matches_info):
+    colours = ["red", "thistle", "saddlebrown", "silver",  "gold"]
+    matches, scores, avg_scores, rankings = [], [], [], []
+    for i, m in enumerate(matches_info, 1):
+        for t in m:
+            if player in t["team"]:
+                matches.append(f"Game{i}")
+                score = int(t["score"])
+                scores.append(score)
+                avg_scores.append(sum(scores) / len(scores))
+                if score < 5:
+                    rankings.append(colours[0])
+                else:
+                    rankings.append(colours[sum(score >= int(t["score"]) for t in m)])
+                break
+    plt.bar(matches, scores, color=rankings)
+    plt.plot([-0.5, len(scores) -0.5], [4.5, 4.5], ls="--", c="r", lw=3)
+    plt.plot(matches, avg_scores, lw="3", c="blue")
+    plt.xticks(rotation=45)
+
+    labels = ["1st", "Under Half", "2nd", "score avg", "3rd", "4th"]
+    legend_colours = ["gold", "red", "silver",  "blue", "saddlebrown", "thistle"]
+    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in legend_colours]
+    plt.legend(handles, labels, loc='lower center', ncol=4)
+    plt.title(f"{player}'s Scores")
+    plt.ylabel("Score")
+    plt.ylim(2, 12)
+    plt.show()
+
+
+def plot_player_mu(player, previous_ranking_info, matches_info):
+    COLOURS = ["red", "green"]
+    rankings = previous_ranking_info.copy()
+    matches, mus, detla_mu, colours = [], [], [], []
+    prev_mu = 25.0
+    for i, m in enumerate(matches_info, 1):
+        rankings.update(update_rankings_from_match(rankings, m))
+        for t in m:
+            if player in t["team"]:
+                matches.append(f"Game{i}")
+                mus.append((mu := rankings[player].mu) - 25)
+                detla_mu.append(delta := mu - prev_mu)
+                colours.append(COLOURS[delta > 0])
+                prev_mu = mu
+                break
+    fig, ax = plt.subplots()
+    ax.bar(matches, detla_mu, color=colours)
+    plt.plot([-0.5, len(matches) -0.5], [0, 0], ls="--", c="r", lw=3)
+    ax.plot(matches, mus, lw="3", c="blue")
+    sax = ax.secondary_yaxis('right', functions=(lambda x: x + 25, lambda x: x - 25))
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(45)
+    sax.set_ylabel("Mu")
+
+    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in ["green", "red", "white", "blue"]]
+    plt.legend(handles, ["/\\ mu", "\\/ mu", "", "mu"], loc='lower center', ncol=3)
+    ax.set_title(f"{player}'s Mu")
+    ax.set_ylim(-15, 15)
+    ax.set_ylabel("Delta Mu")
     plt.show()
