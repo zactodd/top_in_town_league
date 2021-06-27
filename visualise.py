@@ -154,8 +154,7 @@ def plot_winrate_over_games(previous_ranking_info, matches_info):
     plt.show()
 
 
-def plot_player_score(player, matches_info):
-    colours = ["red", "thistle", "saddlebrown", "silver",  "gold"]
+def plot_player_score(player, matches_info, threhold_name="Gerry"):
     matches, scores, avg_scores, rankings = [], [], [], []
     for i, m in enumerate(matches_info, 1):
         for t in m:
@@ -165,20 +164,22 @@ def plot_player_score(player, matches_info):
                 scores.append(score)
                 avg_scores.append(sum(scores) / len(scores))
                 if score < 5:
-                    rankings.append(colours[0])
+                    rankings.append("red")
+                elif score >= 10:
+                    rankings.append("gold")
                 else:
-                    rankings.append(colours[sum(score >= int(t["score"]) for t in m)])
+                    rankings.append("grey")
                 break
-    plt.bar(matches, scores, color=rankings)
-    plt.plot(matches, avg_scores, lw="3", c="blue")
-    plt.plot([-0.5, len(scores) -0.5], [4.5, 4.5], ls="--", c="r", lw=3)
 
+    plt.bar(matches, scores, color=rankings)
+    plt.plot([-0.5, len(scores) -0.5], [4, 4], c="r", lw=2, alpha=0.7)
+    plt.scatter(matches, avg_scores, '-o', c="blue", zorder=5)
     plt.xticks(rotation=45)
 
-    labels = ["1st", "Below 5VPs", "2nd", "Avg Score", "3rd", "4th"]
-    legend_colours = ["gold", "red", "silver", "blue", "saddlebrown", "thistle"]
+    labels = ["Win", "Loss", f"{threhold_name} threshold", "Avg Score"]
+    legend_colours = ["gold", "grey", "red",  "blue"]
     handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in legend_colours]
-    plt.legend(handles, labels, loc='lower center', ncol=4)
+    plt.legend(handles, labels, loc='lower center', ncol=2)
     plt.title(f"{player}'s Scores")
     plt.ylabel("Score")
     plt.ylim(2, 12)
