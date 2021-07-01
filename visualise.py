@@ -13,7 +13,7 @@ def pprint_rankings_history(previous_ranking_info, matches_info, min_played=5):
     ordered_players = sorted({k for k, v in played.items() if v >= min_played})
 
     rankings = previous_ranking_info.copy()
-    other_metrics = defaultdict(lambda: {"scores": [], "wins": 0, "played": 0})
+    other_metrics = defaultdict(lambda: {"scores": [], "dist2nd": [], "wins": 0, "played": 0})
     num_players = len(ordered_players)
     format_row = " {:<15}|" * (num_players + 1)
     score_row = " {:<15}|" + " {:>15}|" * num_players
@@ -26,20 +26,21 @@ def pprint_rankings_history(previous_ranking_info, matches_info, min_played=5):
 
     for game_idx, m in enumerate(matches_info, 1):
         print(line)
-        teams = {}
-        scores = {}
+        teams, scores = {}, {}
+        second = sorted(m, key=lambda t: -t["score"])[1]["score"]
         for i, t in enumerate(m, 1):
             for p in t["team"]:
                 score = t["score"]
                 teams[p] = "-".join(t["team"])
                 scores[p] = score
+                other_metrics[p]["dist2nd"].append(int(score) - second)
                 other_metrics[p]["scores"].append(score)
                 other_metrics[p]["played"] += 1
                 if score >= 10:
                     other_metrics[p]["wins"] += 1
         rankings.update(update_rankings_from_match(rankings, m))
         game_prints = pteam, pscore = [], []
-        post_prints = pmu, pwins, pwinrate, ptotal, pavg = [], [], [], [], []
+        post_prints = pmu, pwins, pwinrate, p2nd_dist, p2nd_dist_avg, ptotal, pavg = [], [], [], [], [], [], []
         for p in ordered_players:
             pmu.append(f'{rankings[p].mu:.2f}')
             if p in teams:
@@ -51,11 +52,15 @@ def pprint_rankings_history(previous_ranking_info, matches_info, min_played=5):
             if p in other_metrics:
                 pwins.append(other_metrics[p]["wins"])
                 pwinrate.append(f'{100 * other_metrics[p]["wins"] / other_metrics[p]["played"]:.2f}')
+                p2nd_dist.append(f'{sum(other_metrics[p]["dist2nd"])}')
+                p2nd_dist_avg.append(f'{sum(other_metrics[p]["dist2nd"]) / other_metrics[p]["played"]:.2f}')
                 ptotal.append(sum(other_metrics[p]["scores"]))
                 pavg.append(f'{sum(other_metrics[p]["scores"]) / other_metrics[p]["played"]:.2f}')
             else:
                 pwins.append("-")
                 pwinrate.append("-")
+                p2nd_dist.append("-")
+                p2nd_dist_avg.append("-")
                 ptotal.append("-")
                 pavg.append("-")
         print("\n".join(score_row.format(n, *s) for n, s in zip(("team", "score"), game_prints)))
@@ -64,20 +69,22 @@ def pprint_rankings_history(previous_ranking_info, matches_info, min_played=5):
                         for n, s in zip(("mu", "wins", "win rate", "total score", "avg score"), post_prints)))
         print(line)
 
-    prints = pmu, pplayed, pwins, pwinrate, ptotal, pavg = [], [], [], [], [], []
+    prints = pmu, pplayed, pwins, pwinrate, p2nd_dist, p2nd_dist_avg, ptotal, pavg = [], [], [], [], [], [], [], []
     for p in ordered_players:
         pmu.append(f'{rankings[p].mu:.2f}')
         pplayed.append(other_metrics[p]["played"])
         pwins.append(other_metrics[p]["wins"])
         pwinrate.append(f'{100 * other_metrics[p]["wins"] / other_metrics[p]["played"]:.2f}')
+        p2nd_dist.append(f'{sum(other_metrics[p]["dist2nd"])}')
+        p2nd_dist_avg.append(f'{sum(other_metrics[p]["dist2nd"]) / other_metrics[p]["played"]:.2f}')
         ptotal.append(sum(other_metrics[p]["scores"]))
         pavg.append(f'{sum(other_metrics[p]["scores"]) / other_metrics[p]["played"]:.2f}')
     print("\n")
     print(line)
     print(format_row.format("players", *sorted(ordered_players)))
     print(line)
-    print("\n".join(score_row.format(n, *s)
-                    for n, s in zip(("mu", "played", "wins", "win rate", "total score", "avg score"), prints)))
+    print("\n".join(score_row.format(n, *s) for n, s in
+                    zip(("mu", "played", "wins", "win rate", "total 2nd dist",  "avg 2nd dist", "total score", "avg score"), prints)))
     print(line)
 
 
@@ -261,7 +268,7 @@ def plot_player_distance_from_second(player, matches_info, threshold_name="Georg
     plt.title(f"{player}'s 2nd Distance")
     plt.ylabel("Score Difference")
     plt.ylim(-6, 6)
-    plt.yticks(range(-6, 7))
+    plt.yticks(range(-5, 6))
     plt.grid(b=None, which='major', axis='y')
     plt.savefig(f"figs/{player}_2nd.png")
     plt.close()
