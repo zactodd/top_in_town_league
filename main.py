@@ -13,9 +13,9 @@ visualise.pprint_rankings_history(rank_info, matches_info)
 for p in players:
     visualise.plot_player_mu(p, rank_info, matches_info)
     visualise.plot_player_score(p, matches_info)
-    score = plt.imread(f"figs/{p}_score.png")
-    mu = plt.imread(f"figs/{p}_mu.png")
-    h_img = cv2.hconcat([score, mu])
+    visualise.plot_player_distance_from_second(p, matches_info)
+    saved_figs = [f"figs/{p}_score.png", f"figs/{p}_2nd.png", f"figs/{p}_mu.png"]
+    h_img = cv2.hconcat([plt.imread(f) for f in saved_figs])
     plt.imsave(f"figs/{p}_combined.png", h_img)
 
 
