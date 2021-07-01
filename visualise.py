@@ -1,22 +1,27 @@
 from utils import update_rankings_from_match
-from collections import defaultdict
+from collections import defaultdict, Counter
 from matplotlib import pyplot as plt
 from itertools import accumulate
 
 
-def pprint_rankings_history(previous_ranking_info, matches_info):
-    order_players = sorted(previous_ranking_info.keys())
+def pprint_rankings_history(previous_ranking_info, matches_info, min_played=5):
+    played = Counter()
+    for m in matches_info:
+        for t in m:
+            for p in t["team"]:
+                played[p] += 1
+    ordered_players = sorted({k for k, v in played.items() if v >= min_played})
 
     rankings = previous_ranking_info.copy()
     other_metrics = defaultdict(lambda: {"scores": [], "wins": 0, "played": 0})
-    num_players = len(previous_ranking_info)
+    num_players = len(ordered_players)
     format_row = " {:<15}|" * (num_players + 1)
     score_row = " {:<15}|" + " {:>15}|" * num_players
     line = "-" * len(format_row.format(*tuple([""] * (num_players + 1))))
 
-    print(format_row.format("players", *sorted(previous_ranking_info.keys())))
+    print(format_row.format("players", *sorted(ordered_players)))
     print(line)
-    print(score_row.format("mu", *(f'{previous_ranking_info[p].mu:.2f}' for p in order_players)))
+    print(score_row.format("mu", *(f'{previous_ranking_info[p].mu:.2f}' for p in ordered_players)))
     print(line)
 
     for game_idx, m in enumerate(matches_info, 1):
@@ -35,7 +40,7 @@ def pprint_rankings_history(previous_ranking_info, matches_info):
         rankings.update(update_rankings_from_match(rankings, m))
         game_prints = pteam, pscore = [], []
         post_prints = pmu, pwins, pwinrate, ptotal, pavg = [], [], [], [], []
-        for p in order_players:
+        for p in ordered_players:
             pmu.append(f'{rankings[p].mu:.2f}')
             if p in teams:
                 pteam.append(teams[p])
@@ -60,7 +65,7 @@ def pprint_rankings_history(previous_ranking_info, matches_info):
         print(line)
 
     prints = pmu, pplayed, pwins, pwinrate, ptotal, pavg = [], [], [], [], [], []
-    for p in order_players:
+    for p in ordered_players:
         pmu.append(f'{rankings[p].mu:.2f}')
         pplayed.append(other_metrics[p]["played"])
         pwins.append(other_metrics[p]["wins"])
@@ -69,7 +74,7 @@ def pprint_rankings_history(previous_ranking_info, matches_info):
         pavg.append(f'{sum(other_metrics[p]["scores"]) / other_metrics[p]["played"]:.2f}')
     print("\n")
     print(line)
-    print(format_row.format("players", *sorted(previous_ranking_info.keys())))
+    print(format_row.format("players", *sorted(ordered_players)))
     print(line)
     print("\n".join(score_row.format(n, *s)
                     for n, s in zip(("mu", "played", "wins", "win rate", "total score", "avg score"), prints)))
