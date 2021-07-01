@@ -1,14 +1,21 @@
 import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
-
+from collections import Counter
 import utils
 import visualise
 
 
 FILE = "/home/tutor/Downloads/Unofficial Official Top In Town League - Sheet1.csv"
 rank_info, matches_info = utils.csv_to_game_record(FILE)
-players = sorted(["Zac", "DD", "Kerry", "Gerry", "George", "Henry", "Stephen"])
+
+played = Counter()
+for m in matches_info:
+    for t in m:
+        for p in t["team"]:
+            played[p] += 1
+players = sorted({k for k, v in played.items() if v >= 5})
+
 visualise.pprint_rankings_history(rank_info, matches_info)
 for p in players:
     visualise.plot_player_mu(p, rank_info, matches_info)
