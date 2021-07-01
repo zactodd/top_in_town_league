@@ -45,7 +45,7 @@ def pprint_rankings_history(previous_ranking_info, matches_info):
                 pscore.append("-")
             if p in other_metrics:
                 pwins.append(other_metrics[p]["wins"])
-                pwinrate.append(f'{other_metrics[p]["wins"] / other_metrics[p]["played"]:.2f}')
+                pwinrate.append(f'{100 * other_metrics[p]["wins"] / other_metrics[p]["played"]:.2f}')
                 ptotal.append(sum(other_metrics[p]["scores"]))
                 pavg.append(f'{sum(other_metrics[p]["scores"]) / other_metrics[p]["played"]:.2f}')
             else:
@@ -207,7 +207,7 @@ def plot_player_mu(player, previous_ranking_info, matches_info):
                 break
     fig, ax = plt.subplots()
     ax.bar(matches, detla_mu, color=colours)
-    plt.plot([-0.5, len(matches) -0.5], [0, 0], ls="--", c="r", lw=3)
+    plt.plot([-0.5, len(matches) - 0.5], [0, 0], ls="-", c="black", lw=3)
     ax.plot(matches, mus, lw="3", c="blue")
     sax = ax.secondary_yaxis('right', functions=(lambda x: x + 25, lambda x: x - 25))
     for tick in ax.get_xticklabels():
@@ -221,5 +221,43 @@ def plot_player_mu(player, previous_ranking_info, matches_info):
     ax.set_ylabel("Delta Mu")
     plt.grid(b=None, which='major', axis='y')
     plt.savefig(f"figs/{player}_mu.png")
+    plt.close()
+    plt.clf()
+
+
+def plot_player_distance_from_second(player, matches_info, threshold_name="George"):
+    matches, distances, avg_distance, colour = [], [], [], []
+    for i, m in enumerate(matches_info, 1):
+        second = sorted(m, key=lambda t: -t["score"])[1]["score"]
+        for t in m:
+            if player in t["team"]:
+                matches.append(f"Game{i}")
+                second_distance = int(t["score"]) - second
+                distances.append(second_distance)
+                avg_distance.append(sum(distances) / len(distances))
+                colour.append("green" if second_distance > 0 else "red")
+
+    plt.bar(matches, distances, color=colour)
+    labels = ["+2nd Distance", "+2nd Distance", "Avg 2nd Distance"]
+    legend_colours = ["green", "red", "blue"]
+    plt.plot([-0.5, len(distances) - 0.5], [5, 5], c="black", lw=2, alpha=0.7)
+    if threshold_name is not None:
+        plt.plot([-0.5, len(distances) -0.5], [5, 5], c="gold", lw=2)
+        labels = [">2nd", "<2nd", f"{threshold_name}'s Win", "Avg 2nd Distance"]
+        legend_colours = ["green", "red", "gold", "blue"]
+
+    plt.plot([-0.5, len(matches) - 0.5], [0, 0], ls="-", c="black", lw=3)
+
+    plt.scatter(matches, avg_distance, c="blue", zorder=3, alpha=0.7)
+    plt.xticks(rotation=45)
+
+    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in legend_colours]
+    plt.legend(handles, labels, loc='lower center', ncol=2)
+    plt.title(f"{player}'s 2nd Distance")
+    plt.ylabel("Score Difference")
+    plt.ylim(-6, 6)
+    plt.yticks(range(-6, 7))
+    plt.grid(b=None, which='major', axis='y')
+    plt.savefig(f"figs/{player}_2nd.png")
     plt.close()
     plt.clf()
