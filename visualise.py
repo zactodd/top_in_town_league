@@ -173,7 +173,7 @@ def plot_player_score(player, matches_info, threhold_name="Gerry"):
 
     plt.bar(matches, scores, color=rankings)
     plt.plot([-0.5, len(scores) -0.5], [4, 4], c="r", lw=2, alpha=0.7)
-    plt.scatter(matches, avg_scores, '-o', c="blue", zorder=5)
+    plt.scatter(matches, avg_scores, c="blue", zorder=3, alpha=0.7)
     plt.xticks(rotation=45)
 
     labels = ["Win", "Loss", f"{threhold_name} threshold", "Avg Score"]
@@ -183,6 +183,8 @@ def plot_player_score(player, matches_info, threhold_name="Gerry"):
     plt.title(f"{player}'s Scores")
     plt.ylabel("Score")
     plt.ylim(2, 12)
+    plt.yticks(range(2, 13))
+    plt.grid(b=None, which='major', axis='y')
     plt.savefig(f"figs/{player}_score.png")
     plt.close()
     plt.clf()
@@ -217,6 +219,7 @@ def plot_player_mu(player, previous_ranking_info, matches_info):
     ax.set_title(f"{player}'s Mu")
     ax.set_ylim(-10, 10)
     ax.set_ylabel("Delta Mu")
+    plt.grid(b=None, which='major', axis='y')
     plt.savefig(f"figs/{player}_mu.png")
     plt.close()
     plt.clf()
