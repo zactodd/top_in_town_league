@@ -7,7 +7,7 @@ import visualise
 import os
 
 
-FILE = "C:\\Users\\thoma\\Downloads\\Unofficial Official Top In Town League - Sheet1.csv"
+FILE = "Unofficial Official Top In Town League - Sheet1.csv"
 rank_info, matches_info = utils.csv_to_game_record(FILE)
 
 played = Counter()
