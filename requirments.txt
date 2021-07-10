@@ -2,5 +2,4 @@ trueskill
 matplotlib
 numpy
 pillow
-holoviews
 networkx
