@@ -294,26 +294,68 @@ def combinations_wins_distribution(match_info):
                     pair_wise_wins[pair][p2] += 1
                 else:
                     pair_wise_wins[pair]["neither"] += 1
+
     ordered_players = nx.DiGraph()
     labels = {}
     width = {}
-    for (t1, t2), c in pair_wise_wins.items():
-        if list(c.keys()) != ["neither"]:
-            winner = max(c.items(), key=lambda x: x[1] if x[0] != "neither" else 0)[0]
-            loser = t2 if t1 == winner else t1
+    for (p1, p2), c in pair_wise_wins.items():
+        winner = max(c.items(), key=lambda x: x[1] if x[0] != "neither" else 0)[0]
+        loser = p2 if p1 == winner else p1
+        if winner != "neither" and c[p1] != c[p2]:
             edge = loser, winner
-
-            labels[edge] = f"{c[winner]}-{c['neither']}-{c[loser]}"
-            width[edge] = 5 * c[winner] / sum(c.values())
+            labels[edge] = f"{c[winner]}-{c[loser]} ({sum(c.values())})"
+            width[edge] = 1 + 3 * c[winner] / sum(c.values())
             ordered_players.add_edge(*edge)
+        else:
+            edge = p1, p2
+            redge = p2, p1
+            labels[edge] = f"{c[winner]}-{c[loser]} ({sum(c.values())})"
+            labels[redge] = ""
+            width[redge] = width[edge] = 0.25
+            ordered_players.add_edges_from([edge, redge])
     width = [width[e] for e in ordered_players.edges]
 
     pos = nx.shell_layout(ordered_players)
-    nx.draw(ordered_players, pos, with_labels=True, width=width, node_size=10000, node_color='none')
-    nx.draw_networkx_edge_labels(ordered_players, pos, edge_labels=labels, label_pos=0.75)
-    plt.savefig("nx.png")
+    nx.draw(ordered_players, pos, with_labels=True, width=width, node_size=3000, node_color='none', font_size=10)
+    nx.draw_networkx_edge_labels(ordered_players, pos, edge_labels=labels, label_pos=0.75, font_size=8)
+    plt.savefig("win_draws_loses.png")
 
 
+def combinations_score_diff(match_info):
+    players = players_with_min_matches(match_info, 5)
+    pair_wise_wins = defaultdict(Counter)
+    for m in match_info:
+        teams = (t for t in m if all(p in players for p in t["team"]))
+        for t1, t2 in combinations(teams, r=2):
+            d = t1["score"] - t2["score"]
+            for p1, p2 in product(t1["team"], t2["team"], repeat=1):
+                pair = frozenset((p1, p2))
+                pair_wise_wins[pair][p1] += d
+                pair_wise_wins[pair][p2] -= d
+                pair_wise_wins[pair]["games"] += 1
+
+    ordered_players = nx.DiGraph()
+    labels = {}
+    width = {}
+    for (p1, p2), c in pair_wise_wins.items():
+        winner, loser = (p1, p2) if c[p1] > c[p2] else (p2, p1)
+        d = c[winner] / c['games']
+        edge = loser, winner
+        labels[edge] = f"+{d:.2f}"
+        width[edge] = 1.5 * d
+        ordered_players.add_edge(*edge)
+        if c[p1] == c[p2]:
+            redge = winner, loser
+            labels[redge] = ""
+            width[redge] = width[edge]
+            ordered_players.add_edge(*redge)
+    width = [width[e] for e in ordered_players.edges]
+
+    pos = nx.shell_layout(ordered_players)
+    nx.draw(ordered_players, pos, with_labels=True, width=width, node_size=3000,
+            node_color='none', font_size=10, arrowstyle='fancy')
+    nx.draw_networkx_edge_labels(ordered_players, pos, edge_labels=labels, label_pos=0.75, font_size=8)
+    plt.savefig("score_diff.png")
 
 
 
