@@ -1,6 +1,6 @@
 from trueskill import Rating, rate, TrueSkill
 import csv
-from collections import defaultdict
+from collections import defaultdict, Counter
 TrueSkill(mu=25, sigma=8.333, draw_probability=0).make_as_global()
 
 
@@ -53,3 +53,12 @@ def csv_to_game_record(file):
         match_info.append(list(match_dict.values()))
     initial_rankings = {r["Players"]: Rating() for r in reader}
     return initial_rankings, match_info
+
+
+def players_with_min_matches(matches_info, min_matches):
+    played = Counter()
+    for m in matches_info:
+        for t in m:
+            for p in t["team"]:
+                played[p] += 1
+    return {k for k, v in played.items() if v >= min_matches}
