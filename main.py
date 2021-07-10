@@ -4,9 +4,10 @@ import cv2
 from collections import Counter
 import utils
 import visualise
+import os
 
 
-FILE = "/home/tutor/Downloads/Unofficial Official Top In Town League - Sheet1.csv"
+FILE = "Unofficial Official Top In Town League - Sheet1.csv"
 rank_info, matches_info = utils.csv_to_game_record(FILE)
 
 played = Counter()
@@ -17,6 +18,10 @@ for m in matches_info:
 players = sorted({k for k, v in played.items() if v >= 5})
 
 visualise.pprint_rankings_history(rank_info, matches_info)
+
+if not os.path.exists("figs"):
+    os.mkdir("figs")
+
 for p in players:
     visualise.plot_player_mu(p, rank_info, matches_info)
     visualise.plot_player_score(p, matches_info)
