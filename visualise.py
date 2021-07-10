@@ -1,7 +1,8 @@
-from utils import update_rankings_from_match
+from utils import update_rankings_from_match, players_with_min_matches
 from collections import defaultdict, Counter
 from matplotlib import pyplot as plt
-from itertools import accumulate
+from itertools import accumulate, combinations, product
+import networkx as nx
 
 
 def pprint_rankings_history(previous_ranking_info, matches_info, min_played=5):
@@ -24,6 +25,7 @@ def pprint_rankings_history(previous_ranking_info, matches_info, min_played=5):
     print(score_row.format("mu", *(f'{previous_ranking_info[p].mu:.2f}' for p in ordered_players)))
     print(line)
 
+    metric_names = ("mu", "wins", "win rate", "total 2nd dist",  "avg 2nd dist", "total score", "avg score")
     for game_idx, m in enumerate(matches_info, 1):
         print(line)
         teams, scores = {}, {}
@@ -65,8 +67,8 @@ def pprint_rankings_history(previous_ranking_info, matches_info, min_played=5):
                 pavg.append("-")
         print("\n".join(score_row.format(n, *s) for n, s in zip(("team", "score"), game_prints)))
         print(line)
-        print("\n".join(score_row.format(n, *s)
-                        for n, s in zip(("mu", "wins", "win rate", "total score", "avg score"), post_prints)))
+        print("\n".join(score_row.format(n, *s) for i, (n, s) in
+                        enumerate(zip(metric_names, post_prints))))
         print(line)
 
     prints = pmu, pplayed, pwins, pwinrate, p2nd_dist, p2nd_dist_avg, ptotal, pavg = [], [], [], [], [], [], [], []
@@ -83,8 +85,10 @@ def pprint_rankings_history(previous_ranking_info, matches_info, min_played=5):
     print(line)
     print(format_row.format("players", *sorted(ordered_players)))
     print(line)
-    print("\n".join(score_row.format(n, *s) for n, s in
-                    zip(("mu", "played", "wins", "win rate", "total 2nd dist",  "avg 2nd dist", "total score", "avg score"), prints)))
+    lines = [1, 4, 6]
+    metric_names = ("mu", "played", "wins", "win rate", "total 2nd dist",  "avg 2nd dist", "total score", "avg score")
+    print("\n".join((f"{line}\n" if i in lines else "") + score_row.format(n, *s) for i, (n, s) in
+                    enumerate(zip(metric_names, prints))))
     print(line)
 
 
@@ -166,7 +170,7 @@ def plot_winrate_over_games(previous_ranking_info, matches_info):
     plt.show()
 
 
-def plot_player_score(player, matches_info, threhold_name="Gerry"):
+def plot_player_score(player, matches_info, threhold_name="DD"):
     matches, scores, avg_scores, rankings = [], [], [], []
     for i, m in enumerate(matches_info, 1):
         for t in m:
@@ -273,3 +277,43 @@ def plot_player_distance_from_second(player, matches_info, threshold_name="Georg
     plt.savefig(f"figs/{player}_2nd.png")
     plt.close()
     plt.clf()
+
+
+def combinations_wins_distribution(match_info):
+    players = players_with_min_matches(match_info, 5)
+    pair_wise_wins = defaultdict(Counter)
+    for m in match_info:
+        winners = frozenset(max(m, key=lambda x: int(x["score"]))["team"])
+        teams = (t["team"] for t in m if all(p in players for p in t["team"]))
+        for t1, t2 in combinations(teams, r=2):
+            for p1, p2 in product(t1, t2, repeat=1):
+                pair = frozenset((p1, p2))
+                if p1 in winners:
+                    pair_wise_wins[pair][p1] += 1
+                elif p2 in winners:
+                    pair_wise_wins[pair][p2] += 1
+                else:
+                    pair_wise_wins[pair]["neither"] += 1
+    ordered_players = nx.DiGraph()
+    labels = {}
+    width = {}
+    for (t1, t2), c in pair_wise_wins.items():
+        if list(c.keys()) != ["neither"]:
+            winner = max(c.items(), key=lambda x: x[1] if x[0] != "neither" else 0)[0]
+            loser = t2 if t1 == winner else t1
+            edge = loser, winner
+
+            labels[edge] = f"{c[winner]}-{c['neither']}-{c[loser]}"
+            width[edge] = 5 * c[winner] / sum(c.values())
+            ordered_players.add_edge(*edge)
+    width = [width[e] for e in ordered_players.edges]
+
+    pos = nx.shell_layout(ordered_players)
+    nx.draw(ordered_players, pos, with_labels=True, width=width, node_size=10000, node_color='none')
+    nx.draw_networkx_edge_labels(ordered_players, pos, edge_labels=labels, label_pos=0.75)
+    plt.savefig("nx.png")
+
+
+
+
+
