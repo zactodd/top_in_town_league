@@ -287,6 +287,7 @@ def combinations_wins_distribution(match_info):
         teams = (t["team"] for t in m if all(p in players for p in t["team"]))
         for t1, t2 in combinations(teams, r=2):
             for p1, p2 in product(t1, t2, repeat=1):
+                print(t1, t2, p1, p2)
                 pair = frozenset((p1, p2))
                 if p1 in winners:
                     pair_wise_wins[pair][p1] += 1
@@ -309,7 +310,7 @@ def combinations_wins_distribution(match_info):
         else:
             edge = p1, p2
             redge = p2, p1
-            labels[edge] = f"{c[winner]}-{c[loser]} ({sum(c.values())})"
+            labels[edge] = f"{c[loser]}-{c[loser]} ({sum(c.values())})"
             labels[redge] = ""
             width[redge] = width[edge] = 0.25
             ordered_players.add_edges_from([edge, redge])
