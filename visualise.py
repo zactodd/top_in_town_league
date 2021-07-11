@@ -6,12 +6,7 @@ import networkx as nx
 
 
 def pprint_rankings_history(previous_ranking_info, matches_info, min_played=5):
-    played = Counter()
-    for m in matches_info:
-        for t in m:
-            for p in t["team"]:
-                played[p] += 1
-    ordered_players = sorted({k for k, v in played.items() if v >= min_played})
+    ordered_players = sorted(players_with_min_matches(matches_info, min_played))
 
     rankings = previous_ranking_info.copy()
     other_metrics = defaultdict(lambda: {"scores": [], "dist2nd": [], "wins": 0, "played": 0})
