@@ -290,23 +290,13 @@ def combinations_wins_distribution(match_info):
                 else:
                     pair_wise_wins[pair]["neither"] += 1
 
-    players_graph = nx.Graph()
-    for (p1, p2), c in pair_wise_wins.items():
-        players_graph.add_edge(p1, p2)
+    players_graph = nx.Graph(pair_wise_wins.keys())
     pos = nx.shell_layout(players_graph)
     labels = {}
-    for e, c in pair_wise_wins.items():
-        p1, p2 = e
+    for (p1, p2), c in pair_wise_wins.items():
         (x1, y1), (x2, y2) = pos[p1], pos[p2]
-        if abs(x1 - x2) < 1e-6:
-            if y1 > y2:
-                labels[e] = f"{c[p1]}-{c['neither']}-{c[p2]}"
-            else:
-                labels[e] = f"{c[p2]}-{c['neither']}-{c[p1]}"
-        elif x1 < x2:
-            labels[e] = f"{c[p1]}-{c['neither']}-{c[p2]}"
-        else:
-            labels[e] = f"{c[p2]}-{c['neither']}-{c[p1]}"
+        f1, f2 = (c[p1], c[p2]) if x1 < x2 or (abs(x1 - x2) < 1e-6 and y1 > y2) else (c[p2], c[p1])
+        labels[(p1, p2)] = f"{f1}-{c['neither']}-{f2}"
     nx.draw(players_graph, pos, with_labels=True, node_size=3000, node_color='white', font_size=10)
     nx.draw_networkx_edge_labels(players_graph, pos, edge_labels=labels, label_pos=0.75, font_size=8)
     plt.savefig("win_draws_loses.png")
