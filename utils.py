@@ -1,6 +1,8 @@
 from trueskill import Rating, rate, TrueSkill
 import csv
 from collections import defaultdict, Counter
+import numpy as np
+import random
 TrueSkill(mu=25, sigma=8.333, draw_probability=0).make_as_global()
 
 
@@ -62,3 +64,19 @@ def players_with_min_matches(matches_info, min_matches):
             for p in t["team"]:
                 played[p] += 1
     return {k for k, v in played.items() if v >= min_matches}
+
+
+def determine_winner(matches_info):
+    m = random.choice(matches_info)
+    weights = []
+    players = []
+    total = 0
+    for t in m:
+        score = int(t["score"])
+        if score >= 10:
+            score += 10
+        for p in t["team"]:
+            players.append(p)
+            weights.append(score)
+            total += score
+    return np.random.choice(players, 1, p=[w / total for w in weights])
