@@ -1,4 +1,4 @@
-from utils import update_rankings_from_match, players_with_min_matches
+from utils import update_rankings_from_match, players_with_min_matches, determine_winner
 from collections import defaultdict, Counter
 from matplotlib import pyplot as plt
 from itertools import accumulate, combinations, product
@@ -339,5 +339,18 @@ def combinations_score_diff(match_info):
             node_color='none', font_size=10)
     nx.draw_networkx_edge_labels(ordered_players, pos, edge_labels=labels, label_pos=0.75, font_size=8)
     plt.savefig("score_diff.png")
+    plt.close()
+    plt.clf()
+
+
+def winning_prob(matches_info, samples=10000):
+    wins = Counter()
+    for _ in range(samples):
+        wins[determine_winner(matches_info)[0]] += 1
+    x, y = zip(*[(k, v / samples) for k, v in sorted(wins.items(), key=lambda x: x[1])])
+    plt.bar(x, y)
+    plt.xticks(rotation=45)
+    plt.grid(b=None, which='major', axis='y')
+    plt.savefig("probs.png")
     plt.close()
     plt.clf()
