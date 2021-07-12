@@ -27,3 +27,4 @@ for p in players:
 img, *imgs = [Image.open(f"figs/{p}_combined.png") for p in players]
 img.save(fp="stats.gif", format='GIF', append_images=imgs, save_all=True, duration=2500, loop=0)
 visualise.combinations_wins_distribution(matches_info)
+visualise.combinations_score_diff(matches_info)
