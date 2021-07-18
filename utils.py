@@ -66,17 +66,15 @@ def players_with_min_matches(matches_info, min_matches):
     return {k for k, v in played.items() if v >= min_matches}
 
 
-def determine_winner(matches_info):
-    m = random.choice(matches_info)
-    weights = []
-    players = []
-    total = 0
-    for t in m:
-        score = int(t["score"])
-        if score >= 10:
-            score += 10
-        for p in t["team"]:
-            players.append(p)
-            weights.append(score)
-            total += score
-    return np.random.choice(players, 1, p=[w / total for w in weights])
+def determine_winner(matches_info, players):
+    scores = Counter()
+    for m in matches_info:
+        for t in m:
+            score = int(t["score"])
+            if score >= 10:
+                score *= 2
+            for p in set(t["team"]) & players:
+                scores[p] += score
+    total = sum(scores.values())
+    choices, weights = zip(*[(p, c / total) for p, c in scores.items()])
+    return np.random.choice(choices, 4, replace=False, p=weights)
