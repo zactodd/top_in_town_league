@@ -31,10 +31,11 @@ def pprint_rankings_history(previous_ranking_info, matches_info, min_played=5):
                 teams[p] = "-".join(t["team"])
                 scores[p] = score
                 other_metrics[p]["dist2nd"].append(int(score) - second)
-                other_metrics[p]["scores"].append(score)
                 other_metrics[p]["played"] += 1
                 if score >= 10:
                     other_metrics[p]["wins"] += 1
+                other_metrics[p]["scores"].append(score)
+
         rankings.update(update_rankings_from_match(rankings, m))
         game_prints = pteam, pscore = [], []
         post_prints = pmu, pwins, pwinrate, p2nd_dist, p2nd_dist_avg, ptotal, pavg = [], [], [], [], [], [], []
@@ -274,8 +275,8 @@ def plot_player_distance_from_second(player, matches_info, threshold_name="Georg
     plt.clf()
 
 
-def combinations_wins_distribution(match_info):
-    players = players_with_min_matches(match_info, 5)
+def combinations_wins_distribution(match_info, min_players=5):
+    players = players_with_min_matches(match_info, min_players)
     pair_wise_wins = defaultdict(Counter)
     for m in match_info:
         winners = frozenset(max(m, key=lambda x: int(x["score"]))["team"])
@@ -297,15 +298,15 @@ def combinations_wins_distribution(match_info):
         (x1, y1), (x2, y2) = pos[p1], pos[p2]
         f1, f2 = (c[p1], c[p2]) if x1 < x2 or (abs(x1 - x2) < 1e-6 and y1 > y2) else (c[p2], c[p1])
         labels[(p1, p2)] = f"{f1}-{c['neither']}-{f2}"
-    nx.draw(players_graph, pos, with_labels=True, node_size=3000, node_color='white', font_size=10)
-    nx.draw_networkx_edge_labels(players_graph, pos, edge_labels=labels, label_pos=0.75, font_size=8)
+    nx.draw(players_graph, pos, with_labels=True, node_size=2500, node_color='white', font_size=10)
+    nx.draw_networkx_edge_labels(players_graph, pos, edge_labels=labels, label_pos=0.49, font_size=8)
     plt.savefig("win_draws_loses.png")
     plt.close()
     plt.clf()
 
 
-def combinations_score_diff(match_info):
-    players = players_with_min_matches(match_info, 5)
+def combinations_score_diff(match_info, min_players=5):
+    players = players_with_min_matches(match_info, min_players)
     pair_wise_wins = defaultdict(Counter)
     for m in match_info:
         teams = (t for t in m if all(p in players for p in t["team"]))
@@ -343,14 +344,32 @@ def combinations_score_diff(match_info):
     plt.clf()
 
 
-def winning_prob(matches_info, samples=10000):
-    wins = Counter()
-    for _ in range(samples):
-        wins[determine_winner(matches_info)[0]] += 1
-    x, y = zip(*[(k, v / samples) for k, v in sorted(wins.items(), key=lambda x: x[1])])
-    plt.bar(x, y)
+def finals_probs(matches_info, samples=30000):
+    matches = []
+    players = set(players_with_min_matches(matches_info, 0))
+    odds = defaultdict(list)
+    for m in matches_info:
+        matches.append(m)
+        wins = Counter()
+        for _ in range(samples):
+            for p in determine_winner(matches, players):
+                wins[p] += 1
+        for p in players:
+            odds[p].append(wins[p] / samples if p in wins else 0.0)
+
+    labels = []
+    rmatches = [f"Game{i + 1}" for i in range(len(matches_info))]
+    bottom = [0] * len(matches_info)
+    for k, v in odds.items():
+        labels.append(k)
+        plt.bar(rmatches, v, label=k, bottom=bottom)
+        for i, vi in enumerate(v):
+            if vi != 0:
+                plt.text(i, bottom[i] + vi / 2, f"{vi * 100:.0f}",
+                         color="w", fontsize=8, horizontalalignment='center')
+            bottom[i] += vi
     plt.xticks(rotation=45)
-    plt.grid(b=None, which='major', axis='y')
-    plt.savefig("probs.png")
+    plt.legend(labels)
+    plt.savefig("finals.png")
     plt.close()
     plt.clf()
