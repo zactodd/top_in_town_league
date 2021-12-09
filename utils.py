@@ -2,7 +2,7 @@ from trueskill import Rating, rate, TrueSkill
 import csv
 from collections import defaultdict, Counter
 import numpy as np
-import random
+from functools import reduce
 TrueSkill(mu=25, sigma=8.333, draw_probability=0).make_as_global()
 
 
@@ -57,26 +57,14 @@ def csv_to_game_record(file):
     return initial_rankings, match_info
 
 
-def players_with_min_matches(matches_info, min_matches):
-    played = Counter()
-    for m in matches_info:
-        for t in m:
-            for p in t["team"]:
-                played[p] += 1
-    return {k for k, v in played.items() if v >= min_matches}
+def players_with_min_matches(matches, min_matches):
+    return {k for k, v in reduce(lambda c, m: c + Counter(p for t in m for p in t["team"]), matches, Counter()).items()
+            if v >= min_matches}
 
 
-def determine_winner(matches_info):
-    m = random.choice(matches_info)
-    weights = []
-    players = []
-    total = 0
-    for t in m:
-        score = int(t["score"])
-        if score >= 10:
-            score += 10
-        for p in t["team"]:
-            players.append(p)
-            weights.append(score)
-            total += score
-    return np.random.choice(players, 1, p=[w / total for w in weights])
+def determine_winner(matches, min_matches=3):
+    players = players_with_min_matches(matches, min_matches)
+    weights = reduce(lambda c, m: c + Counter({p: s * 2 if (s := t["score"]) > 9 else s
+                                               for t in m for p in t["team"] if p in players}),  matches, Counter())
+    total = sum(weights.values())
+    return np.random.choice(list(weights.keys()), 4, p=[w / total for w in weights.values()], replace=False)
