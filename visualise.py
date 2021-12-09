@@ -2,10 +2,11 @@ from utils import update_rankings_from_match, players_with_min_matches, determin
 from collections import defaultdict, Counter
 from matplotlib import pyplot as plt
 from itertools import accumulate, combinations, product
+from functools import reduce
 import networkx as nx
 
 
-def pprint_rankings_history(previous_ranking_info, matches_info, min_played=5):
+def pprint_rankings_history(previous_ranking_info, matches_info, min_played=3):
     ordered_players = sorted(players_with_min_matches(matches_info, min_played))
 
     rankings = previous_ranking_info.copy()
@@ -275,7 +276,7 @@ def plot_player_distance_from_second(player, matches_info, threshold_name="Georg
 
 
 def combinations_wins_distribution(match_info):
-    players = players_with_min_matches(match_info, 5)
+    players = players_with_min_matches(match_info, 3)
     pair_wise_wins = defaultdict(Counter)
     for m in match_info:
         winners = frozenset(max(m, key=lambda x: int(x["score"]))["team"])
@@ -297,15 +298,15 @@ def combinations_wins_distribution(match_info):
         (x1, y1), (x2, y2) = pos[p1], pos[p2]
         f1, f2 = (c[p1], c[p2]) if x1 < x2 or (abs(x1 - x2) < 1e-6 and y1 > y2) else (c[p2], c[p1])
         labels[(p1, p2)] = f"{f1}-{c['neither']}-{f2}"
-    nx.draw(players_graph, pos, with_labels=True, node_size=3000, node_color='white', font_size=10)
+    nx.draw(players_graph, pos, with_labels=True, node_size=2200, node_color='white', font_size=10)
     nx.draw_networkx_edge_labels(players_graph, pos, edge_labels=labels, label_pos=0.75, font_size=8)
-    plt.savefig("win_draws_loses.png")
+    plt.savefig("win_draws_loses1.png")
     plt.close()
     plt.clf()
 
 
 def combinations_score_diff(match_info):
-    players = players_with_min_matches(match_info, 5)
+    players = players_with_min_matches(match_info, 3)
     pair_wise_wins = defaultdict(Counter)
     for m in match_info:
         teams = (t for t in m if all(p in players for p in t["team"]))
@@ -343,14 +344,29 @@ def combinations_score_diff(match_info):
     plt.clf()
 
 
-def winning_prob(matches_info, samples=10000):
-    wins = Counter()
-    for _ in range(samples):
-        wins[determine_winner(matches_info)[0]] += 1
-    x, y = zip(*[(k, v / samples) for k, v in sorted(wins.items(), key=lambda x: x[1])])
-    plt.bar(x, y)
+def winning_prob(matches, samples=1000, min_matches=3):
+    players = players_with_min_matches(matches, min_matches)
+    prior = []
+    finals_probs = defaultdict(list)
+    for m in matches:
+        prior.append(m)
+        wins = reduce(lambda c, _: c + Counter(determine_winner(prior, 0)), range(samples), Counter())
+        for p in players:
+            finals_probs[p].append(wins[p] / samples)
+
+    bottom = [0] * len(matches)
+    x_labels = [f"Game{i}" for i in range(1, len(matches) + 1)]
+    for k, v in sorted(finals_probs.items()):
+        plt.bar(x_labels, v, bottom=bottom, label=k, width=0.7)
+
+        # Update bottom and add text
+        for idx, (vi, b) in enumerate(zip(v, bottom)):
+            if vi != 0:
+                plt.text(idx, b + vi / 2, int(100 * vi), fontsize=8, c="w", horizontalalignment='center')
+                bottom[idx] += vi
+
+    plt.legend(sorted(players))
     plt.xticks(rotation=45)
-    plt.grid(b=None, which='major', axis='y')
-    plt.savefig("probs.png")
+    plt.savefig("probs2.png")
     plt.close()
     plt.clf()
